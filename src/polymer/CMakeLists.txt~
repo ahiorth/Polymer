@@ -1,0 +1,15 @@
+SET ( SRC
+     circulation.cpp
+     organ.cpp
+     vessel.cpp
+     )
+
+SET ( HEADERS
+     circulation.h
+     organ.h
+     vessel.h
+    )
+
+
+ADD_LIBRARY ( Body  ${SRC} ${HEADERS} )
+

@@ -1,0 +1,17 @@
+SET ( MAINSRC
+
+           BloodJob.cpp
+)
+
+
+SET( executable   BloodJobX )
+
+INCLUDE_DIRECTORIES   ("${PROJECT_SOURCE_DIR}/Body")
+
+ADD_EXECUTABLE(        ${executable} ${MAINSRC} )
+TARGET_LINK_LIBRARIES( ${executable} Body )
+
+
+
+#install (TARGETS ${executable}
+#         RUNTIME DESTINATION ${PROJECT_BINARY_DIR}/bin)

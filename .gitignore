@@ -1,0 +1,70 @@
+# Latex files       #
+#####################
+*.tex
+*.aux
+*.blg
+*.bbl
+*.log
+*.idx
+*.ilg
+*.ind
+*.loe
+*.toc
+# Literature files  #
+#####################
+
+.pdf
+
+# Doconce Stuff     #
+#####################
+__pycache__
+tmp_*
+automake*
+Trash
+.*_html_file_collection
+.*.exerinfo
+.*.copyright
+sphinx-rootdir
+
+# Build directory   #
+#####################
+build/
+build_win/
+
+# text files        #
+#####################
+*.dat~
+~$*
+*.gp~
+*.html
+
+# image files       #
+#####################
+*.png
+*.jpeg
+*.cgm
+
+#  C stuff          #
+#####################
+gmon.out
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# VS generated files #
+######################
+.vs/
+out/
+
+#  ascii out files  #
+#####################
+*.out
+
