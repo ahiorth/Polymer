@@ -12,8 +12,7 @@ class polymer_t
 	//
 	//solver class for calculating polymer degradation NC, ..., NNa is the number of Carbon,
 	//hydrogen, oxygen, nitrogen, kalium, and natrium in the polumer monomer
-	polymer_t(double Mw, double Nb, int Nb_mono_deg, int NC, int NH, int NO, int NN, int NK, int NNa);
-
+	
 	double Mw_C_ = 12.0107;     //g / mol
 	double Mw_H_ = 1.0079;      //g / mol
 	double Mw_O_ = 15.9994;     //g / mol
@@ -22,17 +21,25 @@ class polymer_t
 	double Mw_Na_ = 22.989769;  //g / mol
 
 public:
+	polymer_t(double Mw=6e6, double Nb = 1, int Nb_mono_deg = 1, int NC = 3, int NH = 5, int NO = 1, int NN = 1, int NK = 0, int NNa = 0);
 	double Mw_poly_;
 	double Mw_mono_;
 	int    Nb_mono_;
 	int    Nb_mono_deg_;
 	int    Nb_poly_;
+	double Mn_; // number average molecular weight
+	double Mw_; // mass average molecular weight
+	double PD_=1;
 	std::vector<int> N_polyT_; // vector of the individual length of polymer chain after time T
 	int N_deg_monomers_ = 0;    // cummulative number of degraded monomers
 	int N_deg_step_ = 0;        // number of degraded per step
 	bool fully_degraded_ = false;
+	int No_childs_ = 1;
+	double M_child2_; // int overflows ....
 
 	double degrade();
+	void get_average();
+	void write_polymer_bindings();
 };
 
 class polymer_solution_t
@@ -40,6 +47,8 @@ class polymer_solution_t
 	//	takes as input an array of polymer objects, and degrades them
 	//	polymer_types : list of polymer objects
 	//	no_polymer_types : number of each polymer in the solution
+public:
+	polymer_solution_t(std::vector<polymer_t> polymer_types, int DT, int Tf);
 	double Na_ = 6.0221409e+23; //Avogadros number
 	int ACTIVE_ = 1;
 	int no_polymers_;
@@ -48,17 +57,20 @@ class polymer_solution_t
 	int time_end_;
 	int DT_;
 	int clock_ = 0;
+	int DEBUG_ = 0;
 	std::vector<double> mass_degraded_t_;
 	std::vector<double> Mn_;// number average molecular weight
 	std::vector<double> Mw_;// mass average molecular weight
 	std::vector<int> Tn_;
 	double degrade_polymer();
-	double degrade_polymer_solution();
+	void degrade_polymer_solution();
 	void write_polymer_hist();
 	std::ofstream hist_fnames_;
 	
-	polymer_solution_t(std::vector<polymer_t> polymer_types, int DT, int Tf);
+	std::vector<double> get_polymer_fractions_old();
 	std::vector<double> get_polymer_fractions();
+	void write_time_series();
+
 
 };
 
