@@ -26,11 +26,12 @@ public:
 	double Mw_mono_;
 	int    Nb_mono_;
 	int    Nb_mono_deg_;
-	int    Nb_poly_;
+	int    Nb_poly_; // Number of bindings in original polymer
 	double Mn_; // number average molecular weight
 	double Mw_; // mass average molecular weight
 	double PD_=1;
 	std::vector<int> N_polyT_; // vector of the individual length of polymer chain after time T
+	std::vector<int> M_polyT_; // vector of the mass of polymer chain after time T
 	int N_deg_monomers_ = 0;    // cummulative number of degraded monomers
 	int N_deg_step_ = 0;        // number of degraded per step
 	bool fully_degraded_ = false;
@@ -59,19 +60,18 @@ public:
 	int clock_ = 0;
 	int DEBUG_ = 0;
 	std::vector<double> mass_degraded_t_;
-	std::vector<double> Mn_;// number average molecular weight
-	std::vector<double> Mw_;// mass average molecular weight
+	std::vector<double> r_;  // average number  of bounds broken
+	std::vector<double> Mn_; // number  average molecular weight
+	std::vector<double> Mw_; // mass    average molecular weight
 	std::vector<int> Tn_;
+	std::vector<int> hist_;
 	double degrade_polymer();
 	void degrade_polymer_solution();
 	void write_polymer_hist();
 	std::ofstream hist_fnames_;
 	
-	std::vector<double> get_polymer_fractions_old();
-	std::vector<double> get_polymer_fractions();
+	void get_polymer_fractions();
 	void write_time_series();
-
-
 };
 
 #endif
