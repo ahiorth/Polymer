@@ -1,15 +1,14 @@
 SET ( MAINSRC
-
-           BloodJob.cpp
+          solution.cpp
 )
 
 
-SET( executable   BloodJobX )
+SET( executable   polymerX )
 
-INCLUDE_DIRECTORIES   ("${PROJECT_SOURCE_DIR}/Body")
+INCLUDE_DIRECTORIES   ("${PROJECT_SOURCE_DIR}/polymer")
 
 ADD_EXECUTABLE(        ${executable} ${MAINSRC} )
-TARGET_LINK_LIBRARIES( ${executable} Body )
+TARGET_LINK_LIBRARIES( ${executable} polymer )
 
 
 

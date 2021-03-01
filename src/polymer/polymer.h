@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include "omp.h"
 
 class polymer_t
 {
@@ -39,7 +40,6 @@ public:
 	double M_child2_; // int overflows ....
 
 	double degrade();
-	void get_average();
 	void write_polymer_bindings();
 };
 
@@ -52,7 +52,6 @@ public:
 	polymer_solution_t(std::vector<polymer_t> polymer_types, int DT, int Tf);
 	double Na_ = 6.0221409e+23; //Avogadros number
 	int ACTIVE_ = 1;
-	int no_polymers_;
 	std::vector<polymer_t> polymer_types_;
 	std::vector<int> active_;
 	int time_end_;
@@ -64,14 +63,28 @@ public:
 	std::vector<double> Mn_; // number  average molecular weight
 	std::vector<double> Mw_; // mass    average molecular weight
 	std::vector<int> Tn_;
-	std::vector<int> hist_;
+	std::vector<std::vector<int>> hist_;
 	double degrade_polymer();
 	void degrade_polymer_solution();
-	void write_polymer_hist();
+	void write_polymer_hist(std::vector<int> &hist, int clock);
 	std::ofstream hist_fnames_;
 	
 	void get_polymer_fractions();
 	void write_time_series();
+};
+
+class MC_sampling_t
+{
+public:
+	MC_sampling_t(std::vector<polymer_t> polymer_types, int DT, int Tf);
+	const int NO_MC_RUNS_ = 10000;
+	int MAX_TIME_ = 0; 
+	std::vector<polymer_solution_t> solMC_; 
+	polymer_solution_t sol_FINAL_; // collect average values
+	void simulate();
+	void get_average();
+	void get_max_time();
+
 };
 
 #endif

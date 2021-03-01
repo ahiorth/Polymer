@@ -11,7 +11,8 @@ polymer_t::polymer_t(double Mw, double Nb, int Nb_mono_deg, int NC, int NH, int 
 	Nb_mono_ = Nb;
 	Nb_mono_deg_ = Nb_mono_deg;
 	Nb_poly_ = (int)Mw_poly_ / Mw_mono_ * Nb_mono_ - 1;
-	M_child2_ = ((double) (Nb_poly_+1)) * (Nb_poly_+1); //Molecular weights squared
+	std::cout << "No of bonds " << Nb_poly_ << std::endl;
+	M_child2_ = ((double) (Nb_poly_+1.)) * (Nb_poly_+1.); //Molecular weights squared
 	N_polyT_.push_back(Nb_poly_);
 	M_polyT_.push_back(Mw_poly_);
 }
@@ -44,7 +45,7 @@ double polymer_t::degrade()
 	//std::uniform_int_distribution<int> distribution(0,N_polyT_.size()-1);
 	// pick a random degraded polymer,
 	//int l = distribution(generator);
-	int l = rand() % N_polyT_.size();
+	int l = (N_polyT_.size()>0)?(rand() % N_polyT_.size()):(0);
 	// ... and place in that polymer
 	//std::uniform_int_distribution<int> distribution2(1, N_polyT_[l]-1);
 	//int l1 = distribution2(generator);
@@ -85,13 +86,11 @@ double polymer_t::degrade()
 
 
 
-polymer_solution_t::polymer_solution_t(std::vector<polymer_t> polymer_types, int DT = 10000, int Tf = 1000000)
+polymer_solution_t::polymer_solution_t(std::vector<polymer_t> polymer_types, int DT, int Tf)
 {
 	polymer_types_ = polymer_types;
 	DT_ = DT;
 	time_end_ = Tf;
-
-
 	std::vector<polymer_t>::iterator it;
 	for (it = polymer_types_.begin(); it != polymer_types_.end(); ++it)
 		active_.push_back(it-polymer_types_.begin());
@@ -127,9 +126,12 @@ void polymer_solution_t::degrade_polymer_solution()
 
 			
 			get_polymer_fractions();
-			write_polymer_hist();
-			std::cout << "Molar weight avereage: "<<Mn_.back() << "\t" << Mw_.back() << "\t" << Mw_.back() / Mn_.back() << std::endl;
-			std::cout << "time step " << clock_ << std::endl;
+			if (DEBUG_)std::cout << "Molar weight avereage: "<<Mn_.back() << "\t" << Mw_.back() << "\t" << Mw_.back() / Mn_.back() << "\t" << r_.back()<< std::endl;
+			if (DEBUG_)std::cout << "time step " << clock_ << std::endl;
+		}
+		if (clock_ == 1000)
+		{
+			std::cout << "break" << std::endl;
 		}
 		mass_degraded_t_.push_back(degrade_polymer());
 		clock_ += 1;
@@ -137,14 +139,14 @@ void polymer_solution_t::degrade_polymer_solution()
 	hist_fnames_.close();
 }
 
-void polymer_solution_t::write_polymer_hist()
+void polymer_solution_t::write_polymer_hist(std::vector<int> &hist, int clock)
 {
 	std::ofstream hist_out;
-	std::string fname = "hist" + std::to_string(clock_) + ".out";
+	std::string fname = "hist" + std::to_string(clock) + ".out";
 	hist_fnames_ << fname << std::endl;
 	hist_out.open(fname, std::ofstream::out);
 	std::vector<int>::iterator it;
-	for (it = hist_.begin(); it != hist_.end(); ++it)
+	for (it = hist.begin(); it != hist.end(); ++it)
 		hist_out << *it << "\n";
 	hist_out.close();
 }
@@ -166,7 +168,8 @@ void polymer_solution_t::get_polymer_fractions()
 	{
 		if (it->N_deg_monomers_ > 0)
 		{
-			Ncc_dist.push_back(it->N_deg_monomers_);
+			for(int j=0;j<it->N_deg_monomers_;++j)
+				Ncc_dist.push_back(0);
 		}
 		Ncc_dist.insert(Ncc_dist.end(), it->N_polyT_.begin(), it->N_polyT_.end());
 		int index = std::distance(polymer_types_.begin(), it);
@@ -179,14 +182,38 @@ void polymer_solution_t::get_polymer_fractions()
 		No_cut += it->No_childs_-1.;
 		No_cut_norm += (double) it->Nb_poly_;
 	}
+	// Hack calculate from distributions
+	double y = 0.;
+	double y_norm = 0.;
+	std::vector<double>w;
+	double mx=0.,w_norm=0.;
+	for (int i = 0; i < Ncc_dist.size(); ++i)
+	{
+		y_norm += (1. + Ncc_dist[i]);
+		y += (1.+Ncc_dist[i]) * (1.+Ncc_dist[i]);
+	}
+	for (int i = 0; i < Ncc_dist.size(); ++i)
+	{
+		w.push_back((1. + Ncc_dist[i]) / y_norm);
+	}
 
+	for (int i = 0; i < Ncc_dist.size(); ++i)
+	{
+		mx += w[i] * (1. + Ncc_dist[i]);
+	}
+	mx *= polymer_types_[0].Mw_mono_;
+	//y = y / ((double)Ncc_dist.size());
+	//y = y/((double)Ncc_dist.size()*(polymer_types_[0].Nb_poly_+1)) * polymer_types_[0].Mw_mono_;
+	y = y / y_norm * polymer_types_[0].Mw_mono_;
 	Mn_.push_back(Mn / Mn_norm);
-	Mw_.push_back(Mw / Mw_norm);
+	Mw = Mw / Mw_norm;
+	//Hack Mw_.push_back(Mw / Mw_norm);
+	Mw_.push_back(mx);
 	Tn_.push_back(clock_);
 	r_.push_back(No_cut/ No_cut_norm);
 	
 
-	hist_= Ncc_dist;
+	hist_.push_back(Ncc_dist);
 }
 
 
@@ -196,9 +223,88 @@ void polymer_solution_t::write_time_series()
 	off.open("polymer_t.out");
 	off << "time\tMn\tMw\tPD\tFractionCut\n";
 	for (int i = 0; i < Tn_.size(); ++i)
-		off << Tn_[i] << "\t" << Mn_[i] << "\t" << Mw_[i] << "\t" << Mw_[i]/Mn_[i]<<"\t"<<r_[i]<<"\n";
+	{
+		off << Tn_[i] << "\t" << Mn_[i] << "\t" << Mw_[i] << "\t" << Mw_[i] / Mn_[i] << "\t" << r_[i] << "\n";
+		std::cout << " Time " << i << " finnished!" << std::endl;
+		
+	}
+
+#pragma omp parallel for
+	for (int i = 0; i < Tn_.size(); ++i)
+	{
+		write_polymer_hist(hist_[i], (int)Tn_[i]);
+		std::cout << " Hist " << i << " finnished!" << std::endl;
+	}
 	off.close();
+	std::cout << "Number of bonds " << polymer_types_[0].Nb_poly_ << std::endl;
 }
+
+MC_sampling_t::MC_sampling_t(std::vector<polymer_t> a, int DT, int Tf):sol_FINAL_(a,DT,Tf)
+{
+	for (int i = 0; i < NO_MC_RUNS_; ++i)
+	{
+		solMC_.push_back(polymer_solution_t(a, DT, Tf));
+	}
+}
+
+void MC_sampling_t::simulate()
+{
+#pragma omp parallel
+#pragma omp parallel for
+	for (int i = 0; i < NO_MC_RUNS_; ++i)
+	{
+		solMC_[i].degrade_polymer_solution();
+		std::cout << " MC no " << i << " finnished!" << std::endl;
+	}
+	get_max_time();
+}
+
+void MC_sampling_t::get_max_time()
+{
+	MAX_TIME_ = solMC_[0].Tn_.size();
+	for (int i = 1; i < NO_MC_RUNS_; ++i)
+		MAX_TIME_ = std::min(solMC_[i - 1].Tn_.size(), solMC_[i].Tn_.size());
+}
+void MC_sampling_t::get_average()
+{
+	std::vector<double> Mn2, Mw2, r2;
+	double N = (double)NO_MC_RUNS_;
+	Mn2.resize(MAX_TIME_, 0.);
+	Mw2.resize(MAX_TIME_, 0.);
+	r2.resize(MAX_TIME_, 0.);
+	sol_FINAL_.Tn_.resize(MAX_TIME_, 0.);
+	sol_FINAL_.Mn_.resize(MAX_TIME_, 0.);
+	sol_FINAL_.Mw_.resize(MAX_TIME_, 0.);
+	sol_FINAL_.r_.resize(MAX_TIME_, 0.);
+	sol_FINAL_.hist_.resize(MAX_TIME_);
+
+	for (int t = 0; t < MAX_TIME_; ++t)
+	{
+		Mn2[t] = Mw2[t] = r2[t] = sol_FINAL_.Mn_[t] = sol_FINAL_.Mw_[t] = sol_FINAL_.r_[t] = 0.;
+		sol_FINAL_.Tn_[t] = solMC_[0].Tn_[t];
+		for (int i = 0; i < NO_MC_RUNS_; ++i)
+		{
+			sol_FINAL_.Mn_[t] += solMC_[i].Mn_[t];
+			sol_FINAL_.Mw_[t] += solMC_[i].Mw_[t];
+			sol_FINAL_.r_[t] += solMC_[i].r_[t];
+			Mn2[t] += solMC_[i].Mn_[t] * solMC_[i].Mn_[t];
+			Mw2[t] += solMC_[i].Mw_[t] * solMC_[i].Mw_[t];
+			r2[t] += solMC_[i].r_[t] * solMC_[i].r_[t];
+	
+			sol_FINAL_.hist_[t].insert(sol_FINAL_.hist_[t].end(), solMC_[i].hist_[t].begin(), solMC_[i].hist_[t].end());
+		}
+		sol_FINAL_.Mn_[t] /= N;
+		sol_FINAL_.Mw_[t] /= N;
+		sol_FINAL_.r_[t]  /= N;
+		Mn2[t] = Mn2[t] / N - sol_FINAL_.Mn_[t];
+		Mw2[t] = Mw2[t] / N - sol_FINAL_.Mw_[t];
+		r2[t]  = r2[t] / N - sol_FINAL_.r_[t];
+		std::cout << " Time " << t << " finnished!" << std::endl;
+	}
+	sol_FINAL_.write_time_series();
+}
+	
+
 //std::default_random_engine generator;
 //std::uniform_int_distribution<int> distribution(1, 6);
 //int dice_roll = distribution(generator);  // generates number in the range 1..6 

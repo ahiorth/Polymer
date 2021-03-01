@@ -1,9 +1,14 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 3.9)
 
 # Maps to Visual Studio solution file (Tutorial.sln)
 # The solution will have all targets (exe, lib, dll) 
 # as Visual Studio projects (.vcproj)
 PROJECT(polymer)
+
+find_package(OpenMP)
+#if(OpenMP_CXX_FOUND)
+#    target_link_libraries(MyTarget PUBLIC OpenMP::OpenMP_CXX)
+#endif()
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin )
 

@@ -9,10 +9,10 @@ import sys
 #from numba.experimental import jitclass
 from celluloid import Camera
 
-ANIM_=True
-
+ANIM_=False
+fig, [axes,axes2] = plt.subplots(1,2)
 if ANIM_:     
-    fig, [axes,axes2] = plt.subplots(1,2)
+    
     camera = Camera(fig)
     print('yes')
 np.random.seed(2)
@@ -151,7 +151,7 @@ class polymer_solution:
     
     def make_polymer_hist(self):
 #        if ANIM_:
-#            fig, [axes,axes2] = plt.subplots(1,2)
+        fig, [axes,axes2] = plt.subplots(1,2)
         y=self.get_polmer_fractions()
  #       plt.hist(x=y, bins='auto', color='#0504aa',alpha=0.7, rwidth=0.85)
         n, bins, patches = axes.hist(x=y, bins='auto', color='#0504aa',density=True,
@@ -161,11 +161,11 @@ class polymer_solution:
         axes.set_ylabel('Frequency')
         axes.text(0.5, 0.5, 'iteration = ' + str(self.clock), horizontalalignment='center',
                   verticalalignment='center', transform=axes.transAxes)
-        axes.set_ylim([0,1e-4])
+        #axes.set_ylim([0,1e-4])
         axes2.plot(self.Tn,self.Mn,'-*',c='b')
 
-        axes2.set_xlim(1000,self.time_end)
-        axes2.set_ylim(1000,max(self.Mn)*10)
+#        axes2.set_xlim(1000,self.time_end)
+#        axes2.set_ylim(1000,max(self.Mn)*10)
         axes2.set_yscale('log')
         axes2.set_xscale('log')
         axes2.grid()
@@ -197,10 +197,10 @@ class polymer_solution:
 
     
 
-Mw1=6e6 
-N1=10000   
+Mw1=6e3 
+N1=100   
 Tf=1000000
-DT=10000
+DT=100
 #a=list(it.repeat(polymer(Mw=Mw1), N1))
 a=[polymer(Mw=Mw1) for i in range(N1)]
 sol=polymer_solution(a,DT=DT,Tf=Tf)
@@ -212,14 +212,14 @@ if(ANIM_):
     animation = camera.animate()
     animation.save('high_molar_weight.gif', writer = 'imagemagick')
 
-Mw2=1e3
-N2=int(Mw1/Mw2*N1) #start with same mass  
+#Mw2=1e3
+#N2=int(Mw1/Mw2*N1) #start with same mass  
 #N2=10000
-print('N2=', N2) 
-a2=[polymer(Mw=Mw2) for i in range(N2)]
-print(len(a2))
-sol2=polymer_solution(a2,DT=DT,Tf=Tf)
-sol2.degrade_polymer_solution()
+#print('N2=', N2) 
+#a2=[polymer(Mw=Mw2) for i in range(N2)]
+#print(len(a2))
+#sol2=polymer_solution(a2,DT=DT,Tf=Tf)
+#sol2.degrade_polymer_solution()
 
 t2=sol2.Tn
 Mn2=sol2.Mn

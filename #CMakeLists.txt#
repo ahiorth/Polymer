@@ -1,0 +1,22 @@
+cmake_minimum_required (VERSION 3.9)
+
+# Maps to Visual Studio solution file (Tutorial.sln)
+# The solution will have all targets (exe, lib, dll) 
+# as Visual Studio projects (.vcproj)
+PROJECT(polymer)
+
+find_package(OpenMP)
+
+
+SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin )
+
+# Command to output information to the console
+# Useful for displaying errors, warnings, and debugging
+message ("cxx Flags: " ${CMAKE_CXX_FLAGS})
+
+# Sub-directories where more CMakeLists.txt exist
+ADD_SUBDIRECTORY( src/polymer  )
+ADD_SUBDIRECTORY( src/solution )
+
+
+

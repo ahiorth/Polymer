@@ -4,23 +4,20 @@
 int main(int argc, char* argv[])
 {
 	double Mw1 = 6e3;
-	int	N1 = 10000;
-	int	Tf = 1000000;
-	int	DT = 1000;
+	int	N1 = 1;
+	int	Tf = 10000000;
+	int	DT = N1;
 
 	std::vector<polymer_t> a;
 	for (int i = 0; i < N1; ++i)
 		a.push_back(polymer_t(Mw1));
 
-	//double Mw2 = 1e3;
-	//int N2 = (int)(Mw1 / Mw2 * N1);
-	//std::vector<polymer_t> a;
-	//for (int i = 0; i < N2; ++i)
-	//	a.push_back(polymer_t(Mw2));
+	MC_sampling_t MC_run(a, DT, Tf);
+	MC_run.simulate();
+	MC_run.get_average();
 
-	polymer_solution_t sol(a, DT, Tf);
+//	polymer_solution_t sol(a, DT, Tf);
+//	sol.degrade_polymer_solution();
+//	sol.write_time_series();
 
-	sol.degrade_polymer_solution();
-	sol.write_time_series();
-	std::cout << "here is solution" << std::endl;
 };

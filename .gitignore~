@@ -10,10 +10,10 @@
 *.ind
 *.loe
 *.toc
-.pdf
-# Data Directory  #
-###################
-DataSUS/
+# Literature files  #
+#####################
+
+*.pdf
 
 # Doconce Stuff     #
 #####################
@@ -30,6 +30,7 @@ sphinx-rootdir
 #####################
 build/
 build_win/
+
 # text files        #
 #####################
 *.dat~
@@ -57,18 +58,17 @@ gmon.out
 .Trashes
 ehthumbs.db
 Thumbs.db
+#*
 
 # VS generated files #
 ######################
 .vs/
 out/
-#  BJ stuff         #
-#####################
-bj.txt
-bjmr.txt
-blood_job_debug.txt
-co.txt
-cofit.txt
-inp_pygen.dat
-kidney.txt
 
+#  ascii out files  #
+#####################
+*.out
+
+# project specific   #
+######################
+debug/
