@@ -38,6 +38,8 @@ public:
 	bool fully_degraded_ = false;
 	int No_childs_ = 1;
 	double M_child2_; // int overflows ....
+	std::vector<int> idx_; // length of polymer chain with a change
+	std::vector<int> dn_;  // change in chain length
 
 	double degrade();
 	void write_polymer_bindings();
@@ -58,6 +60,7 @@ public:
 	int DT_;
 	int clock_ = 0;
 	int DEBUG_ = 0;
+	int MAX_POLYMER_LENGTH_;
 	std::vector<double> mass_degraded_t_;
 	std::vector<double> r_;  // average number  of bounds broken
 	std::vector<double> Mn_; // number  average molecular weight
@@ -68,16 +71,18 @@ public:
 	void degrade_polymer_solution();
 	void write_polymer_hist(std::vector<int> &hist, int clock);
 	std::ofstream hist_fnames_;
-	
+	std::vector<int> Ndist_;    // Number distribution
+	std::vector<double> Mdist_; // Mass distribution
 	void get_polymer_fractions();
 	void write_time_series();
+	void write_time_denst(int clock);
 };
 
 class MC_sampling_t
 {
 public:
 	MC_sampling_t(std::vector<polymer_t> polymer_types, int DT, int Tf);
-	const int NO_MC_RUNS_ = 10000;
+	const int NO_MC_RUNS_ = 1;
 	int MAX_TIME_ = 0; 
 	std::vector<polymer_solution_t> solMC_; 
 	polymer_solution_t sol_FINAL_; // collect average values

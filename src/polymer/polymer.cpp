@@ -15,6 +15,8 @@ polymer_t::polymer_t(double Mw, double Nb, int Nb_mono_deg, int NC, int NH, int 
 	M_child2_ = ((double) (Nb_poly_+1.)) * (Nb_poly_+1.); //Molecular weights squared
 	N_polyT_.push_back(Nb_poly_);
 	M_polyT_.push_back(Mw_poly_);
+	idx_.resize(3, 0); // one can only lead to three changes
+	dn_.push_back(-1); dn_.push_back(1); dn_.push_back(1);
 }
 
 void polymer_t::write_polymer_bindings()
@@ -51,6 +53,9 @@ double polymer_t::degrade()
 	//int l1 = distribution2(generator);
 	int l1 = (N_polyT_[l]>1)?(rand() % (N_polyT_[l] - 1)+1):(1);
 	int l2 = N_polyT_[l] - l1;
+	// polymer molecule of size l1 is split into l2 and l1-1
+	idx_[0] = N_polyT_[l]; idx_[1] = l1 - 1; idx_[2] = l2;
+
 	N_polyT_[l] = l1 - 1;
 	M_polyT_[l] = Mw_mono_ * l1;
 	N_deg_step_ = 0;
@@ -92,8 +97,20 @@ polymer_solution_t::polymer_solution_t(std::vector<polymer_t> polymer_types, int
 	DT_ = DT;
 	time_end_ = Tf;
 	std::vector<polymer_t>::iterator it;
+	
+	MAX_POLYMER_LENGTH_ = polymer_types_[0].Nb_poly_;
+	for (int i = 1; i < polymer_types_.size(); ++i)
+		MAX_POLYMER_LENGTH_ = std::max(polymer_types_[i-1].Nb_poly_, polymer_types_[i].Nb_poly_);
+	Ndist_.resize(MAX_POLYMER_LENGTH_+1, 0);
+	Mdist_.resize(MAX_POLYMER_LENGTH_ + 1, 0.);
 	for (it = polymer_types_.begin(); it != polymer_types_.end(); ++it)
-		active_.push_back(it-polymer_types_.begin());
+	{
+		active_.push_back(it - polymer_types_.begin());
+		Ndist_[it->Nb_poly_]++;
+		Mdist_[it->Nb_poly_] += it->Mw_poly_;
+	}
+
+
 }
 double polymer_solution_t::degrade_polymer()
 {
@@ -108,6 +125,14 @@ double polymer_solution_t::degrade_polymer()
 	polymer_t *pol;
 	pol = &polymer_types_[active_[idx]];
 	double dmp = pol->degrade();
+	Ndist_[pol->idx_[0]] += pol->dn_[0];
+	Ndist_[pol->idx_[1]] += pol->dn_[1];
+	Ndist_[pol->idx_[2]] += pol->dn_[2];
+	//                       change        number of monomers   Mw_mono
+	Mdist_[pol->idx_[0]] += pol->dn_[0] * (pol->idx_[0] + 1) * pol->Mw_mono_;
+	Mdist_[pol->idx_[1]] += pol->dn_[1] * (pol->idx_[0] + 1) * pol->Mw_mono_;
+	Mdist_[pol->idx_[2]] += pol->dn_[2] * (pol->idx_[0] + 1) * pol->Mw_mono_;
+
 	if (pol->fully_degraded_)
 	{
 		active_.erase(active_.begin() + idx);
@@ -127,12 +152,11 @@ void polymer_solution_t::degrade_polymer_solution()
 			
 			get_polymer_fractions();
 			if (DEBUG_)std::cout << "Molar weight avereage: "<<Mn_.back() << "\t" << Mw_.back() << "\t" << Mw_.back() / Mn_.back() << "\t" << r_.back()<< std::endl;
-			if (DEBUG_)std::cout << "time step " << clock_ << std::endl;
+			std::cout << "time step " << clock_ << std::endl;
+			write_time_denst(Ndist_, clock_);
 		}
-		if (clock_ == 1000)
-		{
-			std::cout << "break" << std::endl;
-		}
+		
+
 		mass_degraded_t_.push_back(degrade_polymer());
 		clock_ += 1;
 	}
@@ -148,6 +172,18 @@ void polymer_solution_t::write_polymer_hist(std::vector<int> &hist, int clock)
 	std::vector<int>::iterator it;
 	for (it = hist.begin(); it != hist.end(); ++it)
 		hist_out << *it << "\n";
+	hist_out.close();
+}
+
+void polymer_solution_t::write_time_denst(int clock)
+{
+	std::ofstream hist_out;
+	std::string fname = "denst" + std::to_string(clock) + ".out";
+	hist_fnames_ << fname << std::endl;
+	hist_out.open(fname, std::ofstream::out);
+	
+	for (int i=0;i<MAX_POLYMER_LENGTH_+1;++i)
+		hist_out << Ndist_[i]<<"\t"<<Mdist_[i] << "\n";
 	hist_out.close();
 }
 void polymer_solution_t::get_polymer_fractions()
