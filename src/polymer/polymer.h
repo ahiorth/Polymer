@@ -62,6 +62,7 @@ public:
 	int DT_;
 	int clock_ = 0;
 	int DEBUG_ = 0;
+	int MAKE_HIST_ = 0; // write histograms file - memory intensive
 	int MAX_POLYMER_LENGTH_;
 	std::vector<double> mass_degraded_t_;
 	std::vector<double> r_;  // average number  of bounds broken
@@ -75,10 +76,12 @@ public:
 	void write_polymer_hist(std::vector<int> &hist, int clock);
 	std::ofstream hist_fnames_;
 	std::vector<int> Ndist_;    // Number distribution
+	std::vector<std::vector<int>> NdistT_; // number distrubtion at DT intervals
 	std::pair<int, int> pos_;
 	void get_polymer_fractions();
 	void write_time_series();
-	void write_time_denst(int clock);
+	void write_time_denst(std::vector<int> &hist, int clock);
+
 };
 
 class MC_sampling_t

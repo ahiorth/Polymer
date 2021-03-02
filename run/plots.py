@@ -42,7 +42,7 @@ def plot_Mw(fname='polymer_t.out', xscale='log', yscale='log', xrange=[],yrange=
     PD=data['PD'].to_numpy()
     ana=np.array([])
     if(x=='FractionCut'):
-        Tf=np.arange(0,1,0.01)
+        Tf=np.arange(0,1,0.02)
         ana=analytical(Tf)
 
     fig, ax1 = plt.subplots()
@@ -59,8 +59,8 @@ def plot_Mw(fname='polymer_t.out', xscale='log', yscale='log', xrange=[],yrange=
     l2=ax1.plot(T,Mw/Mw[0],label='Mw')
     lana1=lana2=[]
     if len(ana)>0:
-        lana1=ax1.plot(Tf,ana[0],'*',label='Mn-ana')
-        lana2=ax1.plot(Tf,ana[1],'^',label='Mw-ana')
+        lana1=ax1.plot(Tf,ana[0],'*')
+        lana2=ax1.plot(Tf,ana[1],'^')
         ax2.plot(Tf,ana[2],'x')
 
     if xscale:
@@ -76,7 +76,9 @@ def plot_Mw(fname='polymer_t.out', xscale='log', yscale='log', xrange=[],yrange=
 
     labs = [l.get_label() for l in lns]
     ax1.legend(lns, labs,  bbox_to_anchor=(1.05, 1), loc='upper left')
-
+    if yscale:
+        fname='../fig/polymer_'+str(p_)+'.png'
+        plt.savefig(fname, bbox_inches='tight',transparent=True)
     plt.show()
 
 def hist_PB(time=1000,fname='hist',ext='.out',p=Nb_,Ft=False):
@@ -130,15 +132,32 @@ def hist_PB(time=1000,fname='hist',ext='.out',p=Nb_,Ft=False):
 #   plt.close()
 #    axes.set_ylim([0,1e-4])
 
+def hist_PB2(time=1000,fname='denst',ext='.out',p=Nb_):
+    fig, axes= plt.subplots(1,1)
+    Ndenst = np.loadtxt(fname+str(time)+ext)
+    M=np.array([i+1 for i in range(len(Ndenst))])
+    Mdenst=M*Ndenst
+    axes.plot(M,Ndenst/np.sum(Ndenst),Mdenst/np.sum(Mdenst))
+    
+    a=0.0961538
+    t=np.arange(0,100,0.1)
+    Ft=ana_distFt(t,a)
+    Nt=ana_distNt(t,a)
+    axes.plot(t,Ft,c='k')
+    axes.plot(t,Nt,'--',c='r')
+    axes.set_xlabel('Number of bounds')
+    axes.set_ylabel('Frequency')
+    axes.grid()
+ #   axes.text(0.5, 0.5, 'iteration = ' + str(time), horizontalalignment='center',
+ #                 verticalalignment='center', transform=axes.transAxes)
 
 plot_Mw()
 plot_Mw(xscale=[],yscale=[],xrange=[1,1000])
 plot_Mw(xscale=[],x='FractionCut')
 plot_Mw(xscale=[],yscale=[],x='FractionCut')
-hist_PB(time=100)
-hist_PB(time=100,Ft=True)
+hist_PB2(time=1000)
 
-y=np.loadtxt('hist100.out')
+
 #data2.plot(x=' Time (hours)',y='pH-cell',ls=':',ax=ax,grid=True,label='pH-IORCoreSim')
 #data3.plot(x='Time',y='pH',ls='--',grid=True,ax=ax,label='pH-1Dsolver')
 #data5.plot(x=data.columns[0],y='pH-cell',ls='--',grid=True,ax=ax,label='pH-IORC-NewIP')

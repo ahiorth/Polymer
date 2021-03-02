@@ -105,6 +105,7 @@ polymer_solution_t::polymer_solution_t(std::vector<polymer_t> polymer_types, int
 	MAX_POLYMER_LENGTH_ = polymer_types_[0].Nb_poly_;
 	for (int i = 1; i < polymer_types_.size(); ++i)
 		MAX_POLYMER_LENGTH_ = std::max(polymer_types_[i-1].Nb_poly_, polymer_types_[i].Nb_poly_);
+
 	Ndist_.resize(MAX_POLYMER_LENGTH_+1, 0);
 	int back = 0;
 	for (it = polymer_types_.begin(); it != polymer_types_.end(); ++it)
@@ -114,8 +115,6 @@ polymer_solution_t::polymer_solution_t(std::vector<polymer_t> polymer_types, int
 		cum_num_bindings_.push_back(back+it->Nb_poly_);
 		back = cum_num_bindings_.back();
 	}
-
-
 }
 double polymer_solution_t::degrade_polymer()
 {
@@ -165,13 +164,13 @@ void polymer_solution_t::degrade_polymer_solution()
 			
 			get_polymer_fractions();
 			if (DEBUG_)std::cout << "Molar weight avereage: "<<Mn_.back() << "\t" << Mw_.back() << "\t" << Mw_.back() / Mn_.back() << "\t" << r_.back()<< std::endl;
-			std::cout << "time step " << clock_ << std::endl;
-			write_time_denst(clock_);
+			if (DEBUG_)std::cout << "time step " << clock_ << std::endl;
+			NdistT_.push_back(Ndist_);
 		}
 		
-
-		mass_degraded_t_.push_back(degrade_polymer());
 		clock_ += 1;
+		mass_degraded_t_.push_back(degrade_polymer());
+		
 	}
 	hist_fnames_.close();
 }
@@ -188,15 +187,14 @@ void polymer_solution_t::write_polymer_hist(std::vector<int> &hist, int clock)
 	hist_out.close();
 }
 
-void polymer_solution_t::write_time_denst(int clock)
+void polymer_solution_t::write_time_denst(std::vector<int> &Ndist, int clock)
 {
 	std::ofstream hist_out;
 	std::string fname = "denst" + std::to_string(clock) + ".out";
-	hist_fnames_ << fname << std::endl;
 	hist_out.open(fname, std::ofstream::out);
 	
 	for (int i=0;i<MAX_POLYMER_LENGTH_+1;++i)
-		hist_out << Ndist_[i]<<"\n";
+		hist_out << Ndist[i]<<"\n";
 	hist_out.close();
 }
 void polymer_solution_t::get_polymer_fractions()
@@ -213,7 +211,7 @@ void polymer_solution_t::get_polymer_fractions()
 	double No_cut = 0.;
 	double No_cut_norm = 0.;
 
-	Ncc_dist.reserve(polymer_types_.size());
+	if(MAKE_HIST_) Ncc_dist.reserve(polymer_types_.size());
 	for (it = polymer_types_.begin(); it != polymer_types_.end(); it++)
 	{
 		if (it->N_deg_monomers_ > 0)
@@ -221,11 +219,14 @@ void polymer_solution_t::get_polymer_fractions()
 			for(int j=0;j<it->N_deg_monomers_;++j)
 				Ncc_dist.push_back(0);
 		}
-		int prev = 0;
-		for (iti = it->cum_num_bindings_.begin(); iti != it->cum_num_bindings_.end(); iti++)
+		if (MAKE_HIST_)
 		{
-			Ncc_dist.push_back(*iti - prev);
-			prev = *iti;
+			int prev = 0;
+			for (iti = it->cum_num_bindings_.begin(); iti != it->cum_num_bindings_.end(); iti++)
+			{
+				Ncc_dist.push_back(*iti - prev);
+				prev = *iti;
+			}
 		}
 	
 		int index = std::distance(polymer_types_.begin(), it);
@@ -269,7 +270,7 @@ void polymer_solution_t::get_polymer_fractions()
 	r_.push_back(No_cut/ No_cut_norm);
 	
 
-	hist_.push_back(Ncc_dist);
+	if (MAKE_HIST_)hist_.push_back(Ncc_dist);
 }
 
 
@@ -284,14 +285,22 @@ void polymer_solution_t::write_time_series()
 		std::cout << " Time " << i << " finnished!" << std::endl;
 		
 	}
-
+	off.close();
+	if (MAKE_HIST_)
+	{
 #pragma omp parallel for
+		for (int i = 0; i < Tn_.size(); ++i)
+		{
+			write_polymer_hist(hist_[i], (int)Tn_[i]);
+			std::cout << " Hist " << i << " finnished!" << std::endl;
+		}
+	}
+
 	for (int i = 0; i < Tn_.size(); ++i)
 	{
-		write_polymer_hist(hist_[i], (int)Tn_[i]);
-		std::cout << " Hist " << i << " finnished!" << std::endl;
+		write_time_denst(NdistT_[i], (int)Tn_[i]);
+		std::cout << " Denst " << i << " finnished!" << std::endl;
 	}
-	off.close();
 	std::cout << "Number of bonds " << polymer_types_[0].Nb_poly_ << std::endl;
 }
 
@@ -332,11 +341,14 @@ void MC_sampling_t::get_average()
 	sol_FINAL_.Mn_.resize(MAX_TIME_, 0.);
 	sol_FINAL_.Mw_.resize(MAX_TIME_, 0.);
 	sol_FINAL_.r_.resize(MAX_TIME_, 0.);
-	sol_FINAL_.hist_.resize(MAX_TIME_);
+	sol_FINAL_.NdistT_.resize(MAX_TIME_);
+	if (sol_FINAL_.MAKE_HIST_)
+		sol_FINAL_.hist_.resize(MAX_TIME_);
 
 	for (int t = 0; t < MAX_TIME_; ++t)
 	{
 		Mn2[t] = Mw2[t] = r2[t] = sol_FINAL_.Mn_[t] = sol_FINAL_.Mw_[t] = sol_FINAL_.r_[t] = 0.;
+		sol_FINAL_.NdistT_[t].resize(sol_FINAL_.MAX_POLYMER_LENGTH_ + 1, 0);
 		sol_FINAL_.Tn_[t] = solMC_[0].Tn_[t];
 		for (int i = 0; i < NO_MC_RUNS_; ++i)
 		{
@@ -347,7 +359,12 @@ void MC_sampling_t::get_average()
 			Mw2[t] += solMC_[i].Mw_[t] * solMC_[i].Mw_[t];
 			r2[t] += solMC_[i].r_[t] * solMC_[i].r_[t];
 	
-			sol_FINAL_.hist_[t].insert(sol_FINAL_.hist_[t].end(), solMC_[i].hist_[t].begin(), solMC_[i].hist_[t].end());
+			if(sol_FINAL_.MAKE_HIST_)
+				sol_FINAL_.hist_[t].insert(sol_FINAL_.hist_[t].end(), solMC_[i].hist_[t].begin(), solMC_[i].hist_[t].end());
+			for (int no = 0; no < solMC_[i].NdistT_[t].size(); ++no)
+			{
+				sol_FINAL_.NdistT_[t][no] += solMC_[i].NdistT_[t][no];
+			}
 		}
 		sol_FINAL_.Mn_[t] /= N;
 		sol_FINAL_.Mw_[t] /= N;
