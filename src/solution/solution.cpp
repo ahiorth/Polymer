@@ -3,8 +3,8 @@
 
 int main(int argc, char* argv[])
 {
-	double Mw1 = 6e3;
-	int	N1 = 10000;
+	double Mw1 = 6e2;
+	int	N1 = 1;
 	int	Tf = 1000000;
 	int	DT = N1;
 

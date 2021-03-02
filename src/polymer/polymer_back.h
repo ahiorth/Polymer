@@ -41,11 +41,7 @@ public:
 	std::vector<int> idx_; // length of polymer chain with a change
 	std::vector<int> dn_;  // change in chain length
 
-	std::pair<int, int> pos_;
-
-	std::vector<int> cum_num_bindings_;
-
-	double degrade(int l);
+	double degrade();
 	void write_polymer_bindings();
 };
 

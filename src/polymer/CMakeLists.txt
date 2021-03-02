@@ -4,6 +4,7 @@ SET ( SRC
 
 SET ( HEADERS
      polymer.h
+     util.h
     )
 
 

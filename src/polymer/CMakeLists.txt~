@@ -1,15 +1,12 @@
-SET ( SRC
-     circulation.cpp
-     organ.cpp
-     vessel.cpp
+ET ( SRC
+     polymer.cpp
      )
 
 SET ( HEADERS
-     circulation.h
-     organ.h
-     vessel.h
+     polymer.h
+     util.h
     )
 
 
-ADD_LIBRARY ( Body  ${SRC} ${HEADERS} )
+ADD_LIBRARY ( polymer  ${SRC} ${HEADERS} )
 

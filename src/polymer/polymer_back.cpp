@@ -1,6 +1,5 @@
 //
 #include "polymer.h"
-#include "util.h"
 
 
 polymer_t::polymer_t(double Mw, double Nb, int Nb_mono_deg, int NC, int NH, int NO, int NN, int NK, int NNa)
@@ -18,8 +17,6 @@ polymer_t::polymer_t(double Mw, double Nb, int Nb_mono_deg, int NC, int NH, int 
 	M_polyT_.push_back(Mw_poly_);
 	idx_.resize(3, 0); // one can only lead to three changes
 	dn_.push_back(-1); dn_.push_back(1); dn_.push_back(1);
-	cum_num_bindings_.push_back(Nb_poly_);
-
 }
 
 void polymer_t::write_polymer_bindings()
@@ -29,12 +26,10 @@ void polymer_t::write_polymer_bindings()
 	std::cout << "-----------------------------------------------" << std::endl;
 	for (int i = 0; i < N_deg_monomers_; ++i)
 		std::cout << 0 << std::endl;
-	int prev = 0;
-	for (it = cum_num_bindings_.begin(); it != cum_num_bindings_.end(); ++it)
+	for (it = N_polyT_.begin(); it != N_polyT_.end(); ++it)
 	{
-		std::cout << *it-prev << "\t" << std::endl;
-		sum += (*it-prev);
-		prev = *it;
+		std::cout << *it << "\t" << std::endl;
+		sum += *it;
 	}
 
 	std::cout << std::endl;
@@ -42,30 +37,33 @@ void polymer_t::write_polymer_bindings()
 	std::cout << "-----------------------------------------------" << std::endl;
 }
 
-double polymer_t::degrade(int idx)
+double polymer_t::degrade()
 {
-	// degrade bindings number l
+	//
+	// pick a random position in a polymer backbone to be degraded
 	// all elements less or equal to a monomer are removed
-	pos_ = findInRange(cum_num_bindings_, idx);
-	int l    = pos_.first; // position in pos_
-	int size = pos_.second; // chain_length
-	int l2 = cum_num_bindings_[l] - idx;
-	int l1 = size - l2;
 	
-	// polymer molecule of size size is split into l2 and l1-1
-	idx_[0] = size; idx_[1] = l1 - 1; idx_[2] = l2;
-	for (int i = l; i < cum_num_bindings_.size(); ++i)
-		cum_num_bindings_[i]--;
+	//std::default_random_engine generator;
+	//std::uniform_int_distribution<int> distribution(0,N_polyT_.size()-1);
+	// pick a random degraded polymer,
+	//int l = distribution(generator);
+	int l = (N_polyT_.size()>0)?(rand() % N_polyT_.size()):(0);
+	// ... and place in that polymer
+	//std::uniform_int_distribution<int> distribution2(1, N_polyT_[l]-1);
+	//int l1 = distribution2(generator);
+	int l1 = (N_polyT_[l]>1)?(rand() % (N_polyT_[l] - 1)+1):(1);
+	int l2 = N_polyT_[l] - l1;
+	// polymer molecule of size l1 is split into l2 and l1-1
+	idx_[0] = N_polyT_[l]; idx_[1] = l1 - 1; idx_[2] = l2;
 
+	N_polyT_[l] = l1 - 1;
+	M_polyT_[l] = Mw_mono_ * l1;
 	N_deg_step_ = 0;
-	if (l1 - 1 < Nb_mono_deg_)
+	if (N_polyT_[l] < Nb_mono_deg_)
 	{
 		N_deg_step_ += 1;
-		cum_num_bindings_.erase(cum_num_bindings_.begin() + l); //remove polymer from list
-	}
-	else
-	{
-		cum_num_bindings_[l] = l1-1; 
+		N_polyT_.erase(N_polyT_.begin() + l); //remove polymer from list
+		M_polyT_.erase(M_polyT_.begin() + l); //remove polymer from list
 	}
 	if (l2 < Nb_mono_deg_)
 	{
@@ -73,12 +71,10 @@ double polymer_t::degrade(int idx)
 	}
 	else
 	{
-		int back = (cum_num_bindings_.size() > 0) ? (cum_num_bindings_.back()) : (0);
-		cum_num_bindings_.push_back(l2 + back);
+		N_polyT_.push_back(l2);// # add to list
+		M_polyT_.push_back(Mw_mono_*(l2+1.));
 	}
-
-	
-	if (cum_num_bindings_.empty()) // list empty, no polymer left
+	if (N_polyT_.empty()) // list empty, no polymer left
 	{
 		fully_degraded_ = true;
 	}
@@ -128,11 +124,7 @@ double polymer_solution_t::degrade_polymer()
 	int idx=(active_.size()<2? 0:rand() % active_.size());
 	polymer_t *pol;
 	pol = &polymer_types_[active_[idx]];
-	pol->write_polymer_bindings();
-	int chain_no = rand() % (pol->cum_num_bindings_.back()+1);
-	std::cout << "break binding " << chain_no << std::endl;
-	double dmp = pol->degrade(chain_no);
-	
+	double dmp = pol->degrade();
 	Ndist_[pol->idx_[0]] += pol->dn_[0];
 	Ndist_[pol->idx_[1]] += pol->dn_[1];
 	Ndist_[pol->idx_[2]] += pol->dn_[2];
@@ -161,7 +153,7 @@ void polymer_solution_t::degrade_polymer_solution()
 			get_polymer_fractions();
 			if (DEBUG_)std::cout << "Molar weight avereage: "<<Mn_.back() << "\t" << Mw_.back() << "\t" << Mw_.back() / Mn_.back() << "\t" << r_.back()<< std::endl;
 			std::cout << "time step " << clock_ << std::endl;
-			write_time_denst(clock_);
+			write_time_denst(Ndist_, clock_);
 		}
 		
 
@@ -208,7 +200,7 @@ void polymer_solution_t::get_polymer_fractions()
 	double No_cut_norm = 0.;
 
 	Ncc_dist.reserve(polymer_types_.size());
-	for (it = polymer_types_.begin(); it != polymer_types_.end(); it++)
+	for (it = polymer_types_.begin(); it < polymer_types_.end(); it++)
 	{
 		if (it->N_deg_monomers_ > 0)
 		{
