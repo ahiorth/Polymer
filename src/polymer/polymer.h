@@ -31,8 +31,6 @@ public:
 	double Mn_; // number average molecular weight
 	double Mw_; // mass average molecular weight
 	double PD_=1;
-	std::vector<int> N_polyT_; // vector of the individual length of polymer chain after time T
-	std::vector<int> M_polyT_; // vector of the mass of polymer chain after time T
 	int N_deg_monomers_ = 0;    // cummulative number of degraded monomers
 	int N_deg_step_ = 0;        // number of degraded per step
 	bool fully_degraded_ = false;
@@ -76,7 +74,6 @@ public:
 	void write_polymer_hist(std::vector<int> &hist, int clock);
 	std::ofstream hist_fnames_;
 	std::vector<int> Ndist_;    // Number distribution
-	std::vector<double> Mdist_; // Mass distribution
 	void get_polymer_fractions();
 	void write_time_series();
 	void write_time_denst(int clock);
@@ -86,7 +83,7 @@ class MC_sampling_t
 {
 public:
 	MC_sampling_t(std::vector<polymer_t> polymer_types, int DT, int Tf);
-	const int NO_MC_RUNS_ = 1;
+	const int NO_MC_RUNS_ = 100;
 	int MAX_TIME_ = 0; 
 	std::vector<polymer_solution_t> solMC_; 
 	polymer_solution_t sol_FINAL_; // collect average values

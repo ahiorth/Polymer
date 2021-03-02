@@ -14,8 +14,7 @@ polymer_t::polymer_t(double Mw, double Nb, int Nb_mono_deg, int NC, int NH, int 
 	Nb_poly_ = (int)Mw_poly_ / Mw_mono_ * Nb_mono_ - 1;
 	std::cout << "No of bonds " << Nb_poly_ << std::endl;
 	M_child2_ = ((double) (Nb_poly_+1.)) * (Nb_poly_+1.); //Molecular weights squared
-	N_polyT_.push_back(Nb_poly_);
-	M_polyT_.push_back(Mw_poly_);
+
 	idx_.resize(3, 0); // one can only lead to three changes
 	dn_.push_back(-1); dn_.push_back(1); dn_.push_back(1);
 	cum_num_bindings_.push_back(Nb_poly_);
@@ -55,7 +54,7 @@ double polymer_t::degrade(int idx)
 	// polymer molecule of size size is split into l2 and l1-1
 	idx_[0] = size; idx_[1] = l1 - 1; idx_[2] = l2;
 	for (int i = l; i < cum_num_bindings_.size(); ++i)
-		cum_num_bindings_[i]--;
+		cum_num_bindings_[i]-=l2+1;
 
 	N_deg_step_ = 0;
 	if (l1 - 1 < Nb_mono_deg_)
@@ -65,7 +64,8 @@ double polymer_t::degrade(int idx)
 	}
 	else
 	{
-		cum_num_bindings_[l] = l1-1; 
+		int prev = (l == 0) ? (0):(cum_num_bindings_[l - 1]);
+		cum_num_bindings_[l] = prev+l1-1; 
 	}
 	if (l2 < Nb_mono_deg_)
 	{
@@ -106,12 +106,10 @@ polymer_solution_t::polymer_solution_t(std::vector<polymer_t> polymer_types, int
 	for (int i = 1; i < polymer_types_.size(); ++i)
 		MAX_POLYMER_LENGTH_ = std::max(polymer_types_[i-1].Nb_poly_, polymer_types_[i].Nb_poly_);
 	Ndist_.resize(MAX_POLYMER_LENGTH_+1, 0);
-	Mdist_.resize(MAX_POLYMER_LENGTH_ + 1, 0.);
 	for (it = polymer_types_.begin(); it != polymer_types_.end(); ++it)
 	{
 		active_.push_back(it - polymer_types_.begin());
 		Ndist_[it->Nb_poly_]++;
-		Mdist_[it->Nb_poly_] += it->Mw_poly_;
 	}
 
 
@@ -128,18 +126,17 @@ double polymer_solution_t::degrade_polymer()
 	int idx=(active_.size()<2? 0:rand() % active_.size());
 	polymer_t *pol;
 	pol = &polymer_types_[active_[idx]];
-	pol->write_polymer_bindings();
-	int chain_no = rand() % (pol->cum_num_bindings_.back()+1);
-	std::cout << "break binding " << chain_no << std::endl;
+	int chain_no = rand() % (pol->cum_num_bindings_.back()) + 1;
+	if (DEBUG_)
+	{
+		std::cout << "break binding " << chain_no << std::endl;
+	}
 	double dmp = pol->degrade(chain_no);
 	
 	Ndist_[pol->idx_[0]] += pol->dn_[0];
 	Ndist_[pol->idx_[1]] += pol->dn_[1];
 	Ndist_[pol->idx_[2]] += pol->dn_[2];
-	//                       change        number of monomers   Mw_mono
-	Mdist_[pol->idx_[0]] += pol->dn_[0] * (pol->idx_[0] + 1) * pol->Mw_mono_;
-	Mdist_[pol->idx_[1]] += pol->dn_[1] * (pol->idx_[0] + 1) * pol->Mw_mono_;
-	Mdist_[pol->idx_[2]] += pol->dn_[2] * (pol->idx_[0] + 1) * pol->Mw_mono_;
+
 
 	if (pol->fully_degraded_)
 	{
@@ -191,13 +188,14 @@ void polymer_solution_t::write_time_denst(int clock)
 	hist_out.open(fname, std::ofstream::out);
 	
 	for (int i=0;i<MAX_POLYMER_LENGTH_+1;++i)
-		hist_out << Ndist_[i]<<"\t"<<Mdist_[i] << "\n";
+		hist_out << Ndist_[i]<<"\n";
 	hist_out.close();
 }
 void polymer_solution_t::get_polymer_fractions()
 {
 	// Have to calculate the average of each polymer molecules
 	std::vector<int> Ncc_dist;
+	std::vector<int>::iterator iti;
 	std::vector<polymer_t>::iterator it;
 
 	double Mw = 0.;
@@ -215,7 +213,13 @@ void polymer_solution_t::get_polymer_fractions()
 			for(int j=0;j<it->N_deg_monomers_;++j)
 				Ncc_dist.push_back(0);
 		}
-		Ncc_dist.insert(Ncc_dist.end(), it->N_polyT_.begin(), it->N_polyT_.end());
+		int prev = 0;
+		for (iti = it->cum_num_bindings_.begin(); iti != it->cum_num_bindings_.end(); iti++)
+		{
+			Ncc_dist.push_back(*iti - prev);
+			prev = *iti;
+		}
+	
 		int index = std::distance(polymer_types_.begin(), it);
 		if (DEBUG_) it->write_polymer_bindings();
 		if (DEBUG_)std::cout << "pol"<< index<<"\t"<<it->Mn_ << "\t" << it->Mw_ << "\t" << it->Mw_ / it->Mn_<<"\n";

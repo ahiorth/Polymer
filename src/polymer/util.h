@@ -32,7 +32,7 @@ template < typename T>
 std::pair<int, T > findInRange(const std::vector<T>& vecOfElements, const T& element)
 {
     std::pair<int, T > result;
-    std::vector<T>::const_iterator it;
+    typename std::vector<T>::const_iterator it;
     T prev_element = 0;
     // Find where the element is located in a list of increasing elements
     // e.g. if vecOfElements = [0,1,2,3,6,10]
