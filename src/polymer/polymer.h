@@ -68,12 +68,14 @@ public:
 	std::vector<double> Mn_; // number  average molecular weight
 	std::vector<double> Mw_; // mass    average molecular weight
 	std::vector<int> Tn_;
+	std::vector<int> cum_num_bindings_; 
 	std::vector<std::vector<int>> hist_;
 	double degrade_polymer();
 	void degrade_polymer_solution();
 	void write_polymer_hist(std::vector<int> &hist, int clock);
 	std::ofstream hist_fnames_;
 	std::vector<int> Ndist_;    // Number distribution
+	std::pair<int, int> pos_;
 	void get_polymer_fractions();
 	void write_time_series();
 	void write_time_denst(int clock);

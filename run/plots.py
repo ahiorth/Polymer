@@ -91,6 +91,7 @@ def hist_PB(time=1000,fname='hist',ext='.out',p=Nb_,Ft=False):
     print(n)
     print(0.5*(bins[1:]+bins[:-1]))
     #print(patches)
+
     axes.grid(axis='y', alpha=0.75)
     a=0.0961538
     if not Ft:
@@ -134,10 +135,10 @@ plot_Mw()
 plot_Mw(xscale=[],yscale=[],xrange=[1,1000])
 plot_Mw(xscale=[],x='FractionCut')
 plot_Mw(xscale=[],yscale=[],x='FractionCut')
-hist_PB(time=100000)
-hist_PB(time=100000,Ft=True)
+hist_PB(time=100)
+hist_PB(time=100,Ft=True)
 
-y=np.loadtxt('hist100000.out')
+y=np.loadtxt('hist100.out')
 #data2.plot(x=' Time (hours)',y='pH-cell',ls=':',ax=ax,grid=True,label='pH-IORCoreSim')
 #data3.plot(x='Time',y='pH',ls='--',grid=True,ax=ax,label='pH-1Dsolver')
 #data5.plot(x=data.columns[0],y='pH-cell',ls='--',grid=True,ax=ax,label='pH-IORC-NewIP')

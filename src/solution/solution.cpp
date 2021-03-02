@@ -4,7 +4,7 @@
 int main(int argc, char* argv[])
 {
 	double Mw1 = 6e3;
-	int	N1 = 1;
+	int	N1 = 100;
 	int	Tf = 1000000;
 	int	DT = N1;
 

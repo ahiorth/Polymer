@@ -106,10 +106,13 @@ polymer_solution_t::polymer_solution_t(std::vector<polymer_t> polymer_types, int
 	for (int i = 1; i < polymer_types_.size(); ++i)
 		MAX_POLYMER_LENGTH_ = std::max(polymer_types_[i-1].Nb_poly_, polymer_types_[i].Nb_poly_);
 	Ndist_.resize(MAX_POLYMER_LENGTH_+1, 0);
+	int back = 0;
 	for (it = polymer_types_.begin(); it != polymer_types_.end(); ++it)
 	{
 		active_.push_back(it - polymer_types_.begin());
 		Ndist_[it->Nb_poly_]++;
+		cum_num_bindings_.push_back(back+it->Nb_poly_);
+		back = cum_num_bindings_.back();
 	}
 
 
@@ -117,21 +120,25 @@ polymer_solution_t::polymer_solution_t(std::vector<polymer_t> polymer_types, int
 double polymer_solution_t::degrade_polymer()
 {
 	//
-	// pick a polymer in solution, degraded it and return the mass of the degraded part
+	// pick a chain in solution, degraded it and return the mass of the degraded part
 	//
 	//std::default_random_engine generator;
 	//std::uniform_int_distribution<int> distribution(0, active_.size()-1);
 	// pick a random degraded polymer,
 	//int idx = distribution(generator);
-	int idx=(active_.size()<2? 0:rand() % active_.size());
+
+
+	int chain_no = (cum_num_bindings_.back() <2)?(1):(rand() % (cum_num_bindings_.back()-1)+1);
+	pos_ = findInRange(cum_num_bindings_, chain_no);
+	int idx = pos_.first; // position of polymer
 	polymer_t *pol;
-	pol = &polymer_types_[active_[idx]];
-	int chain_no = rand() % (pol->cum_num_bindings_.back()) + 1;
+	pol = &polymer_types_[idx];
 	if (DEBUG_)
 	{
 		std::cout << "break binding " << chain_no << std::endl;
 	}
-	double dmp = pol->degrade(chain_no);
+	int prev = (idx == 0) ? (0) : (cum_num_bindings_[idx - 1]);
+	double dmp = pol->degrade(chain_no- prev);
 	
 	Ndist_[pol->idx_[0]] += pol->dn_[0];
 	Ndist_[pol->idx_[1]] += pol->dn_[1];
@@ -140,16 +147,17 @@ double polymer_solution_t::degrade_polymer()
 
 	if (pol->fully_degraded_)
 	{
-		active_.erase(active_.begin() + idx);
 		if(DEBUG_) std::cout << "polymer " << idx << " fully degraded" << std::endl;
 	}
+	for (int i = idx; i < cum_num_bindings_.size(); ++i) // remove a chain 
+		cum_num_bindings_[i] --;
 	return dmp * pol->Mw_mono_ / Na_;
 }
 
 void polymer_solution_t::degrade_polymer_solution()
 {
 	hist_fnames_.open("polymer_fnames.out", std::ofstream::out);
-	while ((active_.size() > 0) && (clock_ < time_end_))
+	while ((cum_num_bindings_.back() > 0) && (clock_ < time_end_))
 	{
 		if (clock_ == 0 || clock_ % DT_ == 0)
 		{
@@ -231,7 +239,7 @@ void polymer_solution_t::get_polymer_fractions()
 		No_cut_norm += (double) it->Nb_poly_;
 	}
 	// Hack calculate from distributions
-	double y = 0.;
+	/*double y = 0.;
 	double y_norm = 0.;
 	std::vector<double>w;
 	double mx=0.,w_norm=0.;
@@ -250,13 +258,13 @@ void polymer_solution_t::get_polymer_fractions()
 		mx += w[i] * (1. + Ncc_dist[i]);
 	}
 	mx *= polymer_types_[0].Mw_mono_;
-	//y = y / ((double)Ncc_dist.size());
-	//y = y/((double)Ncc_dist.size()*(polymer_types_[0].Nb_poly_+1)) * polymer_types_[0].Mw_mono_;
-	y = y / y_norm * polymer_types_[0].Mw_mono_;
-	Mn_.push_back(Mn / Mn_norm);
-	Mw = Mw / Mw_norm;
-	//Hack Mw_.push_back(Mw / Mw_norm);
 	Mw_.push_back(mx);
+
+
+	y = y / y_norm * polymer_types_[0].Mw_mono_;
+	*/
+	Mn_.push_back(Mn / Mn_norm);
+	Mw_.push_back(Mw / Mw_norm);
 	Tn_.push_back(clock_);
 	r_.push_back(No_cut/ No_cut_norm);
 	
