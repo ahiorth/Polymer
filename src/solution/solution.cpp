@@ -3,10 +3,10 @@
 
 int main(int argc, char* argv[])
 {
-	double Mw1 = 6e6;
-	int	N1 = 1000;
+	double Mw1 = 6e3;
+	int	N1 = 100;
 	int	Tf = 1000000000;
-	int	DT = 100000;
+	int	DT = N1*((int) Mw1/(6e3));
 
 	std::vector<polymer_t> a;
 	for (int i = 0; i < N1; ++i)

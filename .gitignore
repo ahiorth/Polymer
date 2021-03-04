@@ -15,6 +15,7 @@
 
 *.pdf
 *.doc
+*.docx
 
 # Doconce Stuff     #
 #####################

@@ -295,7 +295,7 @@ void polymer_solution_t::write_time_series()
 			std::cout << " Hist " << i << " finnished!" << std::endl;
 		}
 	}
-
+#pragma omp parallel for
 	for (int i = 0; i < Tn_.size(); ++i)
 	{
 		write_time_denst(NdistT_[i], (int)Tn_[i]);
@@ -306,6 +306,7 @@ void polymer_solution_t::write_time_series()
 
 MC_sampling_t::MC_sampling_t(std::vector<polymer_t> a, int DT, int Tf):sol_FINAL_(a,DT,Tf)
 {
+#pragma omp parallel for
 	for (int i = 0; i < NO_MC_RUNS_; ++i)
 	{
 		solMC_.push_back(polymer_solution_t(a, DT, Tf));
@@ -314,10 +315,10 @@ MC_sampling_t::MC_sampling_t(std::vector<polymer_t> a, int DT, int Tf):sol_FINAL
 
 void MC_sampling_t::simulate()
 {
-#pragma omp parallel
 #pragma omp parallel for
 	for (int i = 0; i < NO_MC_RUNS_; ++i)
 	{
+		std::cout << " Mc no" << i << " started " << std::endl;
 		solMC_[i].degrade_polymer_solution();
 		std::cout << " MC no " << i << " finnished!" << std::endl;
 	}
@@ -377,7 +378,3 @@ void MC_sampling_t::get_average()
 	sol_FINAL_.write_time_series();
 }
 	
-
-//std::default_random_engine generator;
-//std::uniform_int_distribution<int> distribution(1, 6);
-//int dice_roll = distribution(generator);  // generates number in the range 1..6 

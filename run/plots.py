@@ -9,10 +9,20 @@ Created on Tue Apr 28 13:50:02 2020
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 Nb_=9-1
 Nb_=104
-#Nb_=1050-1
+a_=0.0961538
+Time_=1000
+
+#Nb_=105131
+#a_=0.0951194
+#Time_=1000000
+try:
+    os.chdir(str(Nb_))
+except:
+    print('Could not change directory')
 
 def analytical(a,p=Nb_):
     '''
@@ -34,6 +44,7 @@ def ana_distNt(t,a,p=Nb_):
     return np.array(a*(1-a)**(t-1)*(2+(p-t)*a)/(p*a+1))
 
 
+
 def plot_Mw(fname='polymer_t.out', xscale='log', yscale='log', xrange=[],yrange=[],x='time'):
     data = pd.read_table(fname,encoding = "ISO-8859-1", sep='\t')
     T=data[x].to_numpy()
@@ -42,7 +53,7 @@ def plot_Mw(fname='polymer_t.out', xscale='log', yscale='log', xrange=[],yrange=
     PD=data['PD'].to_numpy()
     ana=np.array([])
     if(x=='FractionCut'):
-        Tf=np.arange(0,1,0.02)
+        Tf=np.arange(0,1,0.001)
         ana=analytical(Tf)
 
     fig, ax1 = plt.subplots()
@@ -55,29 +66,29 @@ def plot_Mw(fname='polymer_t.out', xscale='log', yscale='log', xrange=[],yrange=
     
     #hack
     #Mw=Mw/(1+T)
-    l1=ax1.plot(T,Mn/Mn[0],label='Mn')
-    l2=ax1.plot(T,Mw/Mw[0],label='Mw')
+    l1=ax1.plot(T,Mn/Mn[0],'*',c='b',label='Mn')
+    l2=ax1.plot(T,Mw/Mw[0],'^',c='r',label='Mw')
     lana1=lana2=[]
     if len(ana)>0:
-        lana1=ax1.plot(Tf,ana[0],'*')
-        lana2=ax1.plot(Tf,ana[1],'^')
-        ax2.plot(Tf,ana[2],'x')
+        lana1=ax1.plot(Tf,ana[0],'-', c='b')
+        lana2=ax1.plot(Tf,ana[1],'-', c='r')
+        ax2.plot(Tf,ana[2],'-',c='g')
 
     if xscale:
         ax1.set_xscale(xscale)
     if yscale:
         ax1.set_yscale(yscale)
     ax1.set_ylabel('Molecular weight (Normalized)')
-    ax2.set_ylabel('Poly Dispersivity')
+    ax2.set_ylabel('Polydispersity')
     ax1.set_xlabel(x)
-    l3=ax2.plot(T,PD,c='k',label='PD')
+    l3=ax2.plot(T,PD,'x',c='g',label='PDI')
     ax1.grid()
     lns=l1+l2+l3+lana1+lana2
 
     labs = [l.get_label() for l in lns]
-    ax1.legend(lns, labs,  bbox_to_anchor=(1.05, 1), loc='upper left')
+    ax1.legend(lns, labs,  bbox_to_anchor=(1.08, 1), loc='upper left')
     if yscale:
-        fname='../fig/polymer_'+str(p_)+'.png'
+        fname='../../fig/polymer_'+str(Nb_)+'.png'
         plt.savefig(fname, bbox_inches='tight',transparent=True)
     plt.show()
 
@@ -95,7 +106,7 @@ def hist_PB(time=1000,fname='hist',ext='.out',p=Nb_,Ft=False):
     #print(patches)
 
     axes.grid(axis='y', alpha=0.75)
-    a=0.0961538
+    a=a_
     if not Ft:
         ax2=axes.twinx()
         t=np.arange(0,100,0.1)
@@ -137,27 +148,70 @@ def hist_PB2(time=1000,fname='denst',ext='.out',p=Nb_):
     Ndenst = np.loadtxt(fname+str(time)+ext)
     M=np.array([i+1 for i in range(len(Ndenst))])
     Mdenst=M*Ndenst
-    axes.plot(M,Ndenst/np.sum(Ndenst),Mdenst/np.sum(Mdenst))
+    axes.plot(M,Ndenst/np.sum(Ndenst), '^', c='b')
+    axes.plot(M,Mdenst/np.sum(Mdenst),  '*',c='r')
     
-    a=0.0961538
-    t=np.arange(0,100,0.1)
+    a=a_
+    t=np.arange(0,100,0.001)
     Ft=ana_distFt(t,a)
     Nt=ana_distNt(t,a)
-    axes.plot(t,Ft,c='k')
-    axes.plot(t,Nt,'--',c='r')
-    axes.set_xlabel('Number of bounds')
+    axes.plot(t,Ft,c='r', label='$F_t$')
+    axes.plot(t,Nt,c='b', label='$N_t$')
+    axes.set_xlabel('Number of chains')
     axes.set_ylabel('Frequency')
+    axes.set_xscale('log')
     axes.grid()
+    axes.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    fname='../../fig/polymer_hist'+str(Nb_)+'.png'
+    plt.savefig(fname, bbox_inches='tight',transparent=True)
+
  #   axes.text(0.5, 0.5, 'iteration = ' + str(time), horizontalalignment='center',
  #                 verticalalignment='center', transform=axes.transAxes)
 
-plot_Mw()
-plot_Mw(xscale=[],yscale=[],xrange=[1,1000])
+
+def plotMwt(Mw0=6e3,M0=57.07,norm=False):
+    fig, ax1 = plt.subplots()
+    p = int(Mw0/M0-1)
+    t=np.arange(1e-5,10,step=0.001)
+    t=np.logspace(-9, 10, num=1000)
+    k=1
+    a=1-np.exp(-k*t)
+    Mn,Mw,DPI=analytical(a,p=p)
+    if not norm:
+        Mn *= M0*(1+p)
+        Mw *= M0*(1+p)
+    ln=[]
+    ln.append(ax1.plot(t,Mn,c='b',label='Mn'))
+    ln.append(ax1.plot(t,Mw,c='r',label='Mw'))
+    ax2 = ax1.twinx()
+    ln.append(ax2.plot(t,DPI,c='k',label='DPI'))
+    lns=[]
+    for ll in ln:
+        lns += ll
+
+    labs = [l.get_label() for l in lns]
+    ax1.legend(lns, labs,  bbox_to_anchor=(1.08, 1), loc='upper left')
+    ax1.set_ylabel('Molecular weight')
+    ax2.set_ylabel('Polydispersity')
+    ax1.set_xlabel('Time [kt]')
+    ax1.set_yscale('log')
+    ax1.set_xscale('log')
+    ax1.grid()
+    plt.show()
+    plt.close()
+    fname='../../fig/polymer_t'+str(p)+'.png'
+    plt.savefig(fname, bbox_inches='tight',transparent=True)
+    print(p)
 plot_Mw(xscale=[],x='FractionCut')
 plot_Mw(xscale=[],yscale=[],x='FractionCut')
-hist_PB2(time=1000)
+hist_PB2(time=Time_)
 
-
+plotMwt()
+plotMwt(Mw0=6e6)
+plt.show()
+data = pd.read_table('polymer_t.out',encoding = "ISO-8859-1", sep='\t')
+T=data['time'].to_numpy()
+alpha=data['FractionCut'].to_numpy()
 #data2.plot(x=' Time (hours)',y='pH-cell',ls=':',ax=ax,grid=True,label='pH-IORCoreSim')
 #data3.plot(x='Time',y='pH',ls='--',grid=True,ax=ax,label='pH-1Dsolver')
 #data5.plot(x=data.columns[0],y='pH-cell',ls='--',grid=True,ax=ax,label='pH-IORC-NewIP')
