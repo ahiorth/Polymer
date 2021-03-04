@@ -8,12 +8,15 @@ SET( executable   polymerX )
 INCLUDE_DIRECTORIES   ("${PROJECT_SOURCE_DIR}/polymer")
 
 ADD_EXECUTABLE(        ${executable} ${MAINSRC} )
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(${executable} PUBLIC polymer OpenMP::OpenMP_CXX)
-    message("CMAKE: COMPILING WITH OPENMP")
-else()
-    target_link_libraries(${executable} polymer) 
-endif()
+target_link_libraries(${executable} polymer)
+
+#find_package(OpenMP)
+#if(OpenMP_CXX_FOUND)
+#    target_link_libraries(${executable} PUBLIC polymer OpenMP::OpenMP_CXX)
+#    message("CMAKE: COMPILING WITH OPENMP")
+#else()
+#    target_link_libraries(${executable} polymer) 
+#endif()
 
 
 

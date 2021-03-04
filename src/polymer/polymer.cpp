@@ -282,7 +282,7 @@ void polymer_solution_t::write_time_series()
 	for (int i = 0; i < Tn_.size(); ++i)
 	{
 		off << Tn_[i] << "\t" << Mn_[i] << "\t" << Mw_[i] << "\t" << Mw_[i] / Mn_[i] << "\t" << r_[i] << "\n";
-		std::cout << " Time " << i << " finnished!" << std::endl;
+//		std::cout << " Time " << i << " finnished!" << std::endl;
 		
 	}
 	off.close();
@@ -292,21 +292,20 @@ void polymer_solution_t::write_time_series()
 		for (int i = 0; i < Tn_.size(); ++i)
 		{
 			write_polymer_hist(hist_[i], (int)Tn_[i]);
-			std::cout << " Hist " << i << " finnished!" << std::endl;
+//			std::cout << " Hist " << i << " finnished!" << std::endl;
 		}
 	}
 #pragma omp parallel for
 	for (int i = 0; i < Tn_.size(); ++i)
 	{
 		write_time_denst(NdistT_[i], (int)Tn_[i]);
-		std::cout << " Denst " << i << " finnished!" << std::endl;
+//		std::cout << " Denst " << i << " finnished!" << std::endl;
 	}
 	std::cout << "Number of bonds " << polymer_types_[0].Nb_poly_ << std::endl;
 }
 
 MC_sampling_t::MC_sampling_t(std::vector<polymer_t> a, int DT, int Tf):sol_FINAL_(a,DT,Tf)
 {
-#pragma omp parallel for
 	for (int i = 0; i < NO_MC_RUNS_; ++i)
 	{
 		solMC_.push_back(polymer_solution_t(a, DT, Tf));
@@ -315,10 +314,13 @@ MC_sampling_t::MC_sampling_t(std::vector<polymer_t> a, int DT, int Tf):sol_FINAL
 
 void MC_sampling_t::simulate()
 {
+	int no_threads=omp_get_max_threads();
+	std::cout << "Max number of threads " << no_threads << std::endl;
+	omp_set_num_threads(no_threads);
 #pragma omp parallel for
 	for (int i = 0; i < NO_MC_RUNS_; ++i)
 	{
-		std::cout << " Mc no" << i << " started " << std::endl;
+		std::cout << " Mc no " << i << " started " << std::endl;
 		solMC_[i].degrade_polymer_solution();
 		std::cout << " MC no " << i << " finnished!" << std::endl;
 	}
@@ -373,7 +375,7 @@ void MC_sampling_t::get_average()
 		Mn2[t] = Mn2[t] / N - sol_FINAL_.Mn_[t];
 		Mw2[t] = Mw2[t] / N - sol_FINAL_.Mw_[t];
 		r2[t]  = r2[t] / N - sol_FINAL_.r_[t];
-		std::cout << " Time " << t << " finnished!" << std::endl;
+//		std::cout << " Time " << t << " finnished!" << std::endl;
 	}
 	sol_FINAL_.write_time_series();
 }

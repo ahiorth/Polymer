@@ -6,8 +6,15 @@ cmake_minimum_required (VERSION 3.9)
 PROJECT(polymer)
 
 find_package(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
+
+#find_package(OpenMP)
 #if(OpenMP_CXX_FOUND)
-#    target_link_libraries(MyTarget PUBLIC OpenMP::OpenMP_CXX)
+#    target_link_libraries(polymer solution PUBLIC OpenMP::OpenMP_CXX)
 #endif()
 
 SET( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin )
