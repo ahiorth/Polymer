@@ -40,6 +40,10 @@ build_win/
 *.gp~
 *.html
 
+#   data directory #
+####################
+data/
+
 # image files       #
 #####################
 *.png

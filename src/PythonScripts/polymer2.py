@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from numba import jit
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def make_histogram(polymers,nm):
     y=np.append(polymers,nm*[0])
     fig, axes = plt.subplots(1,1)
@@ -13,7 +13,7 @@ def make_histogram(polymers,nm):
     axes.set_xlabel('Number of bounds')
     axes.set_ylabel('Frequency')
     plt.show()
-@jit(nopython=True)
+#@jit(nopython=True)
 def MC_run():    
     p_=104
     N_=10000

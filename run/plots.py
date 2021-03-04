@@ -169,49 +169,82 @@ def hist_PB2(time=1000,fname='denst',ext='.out',p=Nb_):
  #                 verticalalignment='center', transform=axes.transAxes)
 
 
-def plotMwt(Mw0=6e3,M0=57.07,norm=False):
+def plotMwt(Mwa=[6e3],M0=57.07,k=1,norm=False, savefig=False, data=False):
     fig, ax1 = plt.subplots()
-    p = int(Mw0/M0-1)
-    t=np.arange(1e-5,10,step=0.001)
-    t=np.logspace(-9, 10, num=1000)
-    k=1
-    a=1-np.exp(-k*t)
-    Mn,Mw,DPI=analytical(a,p=p)
-    if not norm:
-        Mn *= M0*(1+p)
-        Mw *= M0*(1+p)
     ln=[]
-    ln.append(ax1.plot(t,Mn,c='b',label='Mn'))
-    ln.append(ax1.plot(t,Mw,c='r',label='Mw'))
-    ax2 = ax1.twinx()
-    ln.append(ax2.plot(t,DPI,c='k',label='DPI'))
     lns=[]
-    for ll in ln:
-        lns += ll
+    ax2 = ax1.twinx()
+    for idx,Mw0 in enumerate(Mwa):
+        ax1.set_xlabel('Time [kt]')
+        p = int(Mw0/M0-1)
+        if(data):
+            t=np.logspace(-1, 4, num=1000)
+        else:
+            t=np.logspace(-7, 4, num=1000)
 
+        a=1-np.exp(-k*t)
+        Mn,Mw,DPI=analytical(a,p=p)
+        if not norm:
+            Mn *= M0*(1+p)
+            Mw *= M0*(1+p)
+        if(idx==0):
+            ln.append(ax1.plot(t,Mn,c='b',label='Mn'))
+            ln.append(ax1.plot(t,Mw,c='r',label='Mw'))
+            ln.append(ax2.plot(t,DPI,c='k',label='PDI'))
+        else:
+            ax1.plot(t,Mn,c='b')
+            ax1.plot(t,Mw,c='r')
+            ax2.plot(t,DPI,c='k')
+
+            
+    if data:
+        folder='/mnt/c/cygwin64/home/2902412/GitHub/Polymer/data/'
+        datafiles=['pam10kDa.txt','pam600KDa.txt','pam6MDa.txt']
+        label=['10kDa','600kDa','6MDa']
+        Tdata=[]
+        Mwdata=[]
+        symbol=['s', 'D', 'o']
+        col=['b','g','r']
+        for idx,files in enumerate(datafiles):
+            fname = folder + files
+            df = pd.read_table(fname,encoding = "ISO-8859-1", sep='\t')
+            Tdata.append(df['Time'].to_numpy())
+            Mwdata.append(df['Mw'].to_numpy())
+            ln.append(ax1.plot(Tdata[-1],Mwdata[-1],symbol[idx],label=label[idx],
+            markersize=10,c=col[idx]))
+        ax1.set_xlabel('Time [Days]')
+
+    for ll in ln:
+            lns += ll
     labs = [l.get_label() for l in lns]
-    ax1.legend(lns, labs,  bbox_to_anchor=(1.08, 1), loc='upper left')
+    print(lns)
+    ax1.legend(lns, labs,  bbox_to_anchor=(1.1, 1), loc='upper left')
     ax1.set_ylabel('Molecular weight')
     ax2.set_ylabel('Polydispersity')
-    ax1.set_xlabel('Time [kt]')
+   
     ax1.set_yscale('log')
     ax1.set_xscale('log')
     ax1.grid()
+    if savefig:
+        if(data):
+            fname='../../fig/polymer_t'+str(p)+'data.png'
+        else:    
+            fname='../../fig/polymer_t'+str(p)+'.png'
+        plt.savefig(fname, bbox_inches='tight',transparent=True)
     plt.show()
-    plt.close()
-    fname='../../fig/polymer_t'+str(p)+'.png'
-    plt.savefig(fname, bbox_inches='tight',transparent=True)
     print(p)
-plot_Mw(xscale=[],x='FractionCut')
-plot_Mw(xscale=[],yscale=[],x='FractionCut')
-hist_PB2(time=Time_)
+#plot_Mw(xscale=[],x='FractionCut')
+#plot_Mw(xscale=[],yscale=[],x='FractionCut')
+#hist_PB2(time=Time_)
 
-plotMwt()
-plotMwt(Mw0=6e6)
-plt.show()
-data = pd.read_table('polymer_t.out',encoding = "ISO-8859-1", sep='\t')
-T=data['time'].to_numpy()
-alpha=data['FractionCut'].to_numpy()
+#plotMwt()
+plotMwt(Mwa=[8039,800e3,3e6])
+plotMwt(Mwa=[8039,800e3,3e6],M0=72.5, data=True,k=800e-7,savefig=True)
+
+#data = pd.read_table('polymer_t.out',encoding = "ISO-8859-1", sep='\t')
+#T=data['time'].to_numpy()
+#alpha=data['FractionCut'].to_numpy()
+
 #data2.plot(x=' Time (hours)',y='pH-cell',ls=':',ax=ax,grid=True,label='pH-IORCoreSim')
 #data3.plot(x='Time',y='pH',ls='--',grid=True,ax=ax,label='pH-1Dsolver')
 #data5.plot(x=data.columns[0],y='pH-cell',ls='--',grid=True,ax=ax,label='pH-IORC-NewIP')
