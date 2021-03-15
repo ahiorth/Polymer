@@ -198,7 +198,7 @@ def plotMwt(Mwa=[6e3],M0=57.07,k=1,norm=False, savefig=False, data=False):
 
             
     if data:
-        folder='/mnt/c/cygwin64/home/2902412/GitHub/Polymer/data/'
+        folder='../data/'
         datafiles=['pam10kDa.txt','pam600KDa.txt','pam6MDa.txt']
         label=['10kDa','600kDa','6MDa']
         Tdata=[]
